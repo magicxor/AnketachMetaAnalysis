@@ -1,0 +1,81 @@
+﻿@page "/charts"
+@using Tewr.Blazor.FileReader
+@using System.IO
+@using AnketachMetaAnalysis.Models
+@using Newtonsoft.Json
+@inject IFileReaderService fileReaderService 
+
+<h1>Charts</h1>
+
+<input type="file" multiple @ref=inputFilesElement />
+
+<button class="btn btn-primary" @onclick=Process>Process</button>
+
+<h1>Monthly</h1>
+
+<div class="row">
+    <div class="col-md-6 col-sm-12 p-4">
+        <MonthlyChart ChartData=@ChartDataByMonth></MonthlyChart>
+    </div>
+</div>
+
+<h1>Total</h1>
+
+<div class="row">
+    <div class="col-md-6 col-sm-12 p-4">
+        <TotalChart ChartData=@ChartDataTotal></TotalChart>
+    </div>
+</div>
+
+@code
+{
+    private ElementReference inputFilesElement;
+    private List<MonthlyChartData> ChartDataByMonth = new List<MonthlyChartData>();
+    private TotalChartData ChartDataTotal = new TotalChartData();
+
+    public async Task Process()
+    {
+        var fileContentList = new List<(string fileName, string fileText)>();
+
+        foreach (var file in await fileReaderService.CreateReference(inputFilesElement).EnumerateFilesAsync())
+        {
+            var fileInfo = await file.ReadFileInfoAsync();
+            using (MemoryStream memoryStream = await file.CreateMemoryStreamAsync(4096))
+            {
+                using (var reader = new StreamReader(memoryStream))
+                {
+                    string text = await reader.ReadToEndAsync();
+                    fileContentList.Add((fileInfo.Name, text));
+                }
+            }
+        }
+
+        var i = 0;
+        foreach (var fileContent in fileContentList)
+        {
+            var channel = JsonConvert.DeserializeObject<Channel>(fileContent.fileText);
+
+            var channelDataByMonth = channel.Messages
+                .GroupBy(
+                    m => new DateTime(m.Date.Year, m.Date.Month, 1),
+                    x => x,
+                    (key, values) => new
+                    {
+                        Key = key,
+                        Values = values.ToList(),
+                    })
+                .Select(g => new MonthlyChartDataItem
+                {
+                    Date = g.Key,
+                    MessageCount = g.Values.Count,
+                })
+                .ToArray();
+
+            ChartDataByMonth.Add(new MonthlyChartData() { Title = fileContent.fileName, DataItems = channelDataByMonth });
+            Console.WriteLine(channel.Messages.Count);
+            ChartDataTotal.DataItems.Add(new TotalChartDataItem { Name = fileContent.fileName, TotalMessageCount = channel.Messages.Count });
+
+            i++;
+        }
+    }
+}

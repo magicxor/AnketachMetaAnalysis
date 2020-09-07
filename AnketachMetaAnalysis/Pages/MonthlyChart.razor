@@ -1,0 +1,24 @@
+﻿@using Radzen.Blazor
+@using AnketachMetaAnalysis.Models
+
+<label>Smooth <RadzenCheckBox @bind-Value="@smooth" Name="smooth"></RadzenCheckBox></label>
+<RadzenChart>
+    @foreach (var chart in ChartData)
+    {
+        <RadzenLineSeries Smooth="@smooth" Data="@(chart.DataItems)" Title="@(chart.Title)" CategoryProperty="Date" ValueProperty="MessageCount">
+            <RadzenMarkers MarkerType="MarkerType.Circle" />
+        </RadzenLineSeries>
+    }
+    <RadzenCategoryAxis Padding="20" FormatString="{0:yy-MMM}" />
+    <RadzenValueAxis>
+        <RadzenGridLines Visible="true" />
+        <RadzenAxisTitle Text="Message count" />
+    </RadzenValueAxis>
+</RadzenChart>
+
+@code {
+    bool smooth = false;
+
+    [Parameter]
+    public List<MonthlyChartData> ChartData { get; set; }
+}

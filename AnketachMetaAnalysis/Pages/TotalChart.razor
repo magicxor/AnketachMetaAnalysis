@@ -1,0 +1,16 @@
+﻿@using Radzen.Blazor
+@using AnketachMetaAnalysis.Models
+
+<RadzenChart>
+    <RadzenColumnSeries Data="@(ChartData.DataItems.ToArray())" Title="Total" CategoryProperty="Name" ValueProperty="TotalMessageCount" />
+    <RadzenCategoryAxis Padding="20" />
+    <RadzenValueAxis Min="0" Max="@(ChartData.MaxTotalMessageCount)" Step="@(ChartData.Step)">
+        <RadzenGridLines Visible="true" />
+        <RadzenAxisTitle Text="Message count" />
+    </RadzenValueAxis>
+</RadzenChart>
+
+@code {
+    [Parameter]
+    public TotalChartData ChartData { get; set; }
+}
